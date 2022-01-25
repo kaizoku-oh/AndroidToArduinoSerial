@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">ArduinoSerial</string>
+    <string name="hint">Type your message here</string>
+    <string name="sendButton">SEND</string>
 </resources>
