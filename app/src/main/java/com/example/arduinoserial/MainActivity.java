@@ -1,13 +1,13 @@
 package com.example.arduinoserial;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.coordinatorlayout.widget.CoordinatorLayout;
 
 import android.hardware.usb.UsbDevice;
 import android.os.Bundle;
 import android.os.Handler;
-import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import com.google.android.material.snackbar.Snackbar;
@@ -18,18 +18,31 @@ import me.aflak.arduino.ArduinoListener;
 public class MainActivity extends AppCompatActivity implements ArduinoListener {
 
     private static final String TAG = "MainActivityTAG";
-    CoordinatorLayout coordinatorLayout;
+    private TextView serialStatusTextView;
+    private TextView receivedMessageTextView;
+    private EditText messageToSendEditText;
     private Arduino serialPort;
-    private TextView textView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        coordinatorLayout = (CoordinatorLayout) findViewById(R.id.coordinatorLayout);
 
-        textView = findViewById(R.id.textView);
-        textView.setMovementMethod(new ScrollingMovementMethod());
+        serialStatusTextView = findViewById(R.id.serialStatus);
+        receivedMessageTextView = findViewById(R.id.receivedMessage);
+        messageToSendEditText = findViewById(R.id.messageToSend);
+        Button sendButton = findViewById(R.id.sendButton);
+
+        sendButton.setOnClickListener(v -> {
+            String msg = messageToSendEditText.getText().toString();
+            if (msg.length() > 0) {
+                serialPort.send(msg.getBytes());
+                messageToSendEditText.setText("");
+            } else {
+                Snackbar.make(v, "Cannot send empty message", Snackbar.LENGTH_LONG).show();
+            }
+        });
+
         serialPort = new Arduino(this);
         serialPort.setBaudRate(9600);
         /* FTDI: New USB device found, idVendor=1a86, idProduct=7523, bcdDevice= 2.54 */
@@ -37,11 +50,6 @@ public class MainActivity extends AppCompatActivity implements ArduinoListener {
         serialPort.addVendorId(0x10c4);
         Log.i(TAG, "Please plug an Arduino via OTG.");
         Log.i(TAG, "On some devices you will have to enable OTG Storage in the phone's settings");
-        Snackbar.make(coordinatorLayout, "Please plug an Arduino via OTG", Snackbar.LENGTH_LONG).show();
-        Snackbar.make(coordinatorLayout,
-                "In some devices you will have to enable OTG Storage in the phone's settings",
-                Snackbar.LENGTH_LONG).show();
-
     }
 
 
@@ -49,6 +57,7 @@ public class MainActivity extends AppCompatActivity implements ArduinoListener {
     protected void onStart() {
         super.onStart();
         serialPort.setArduinoListener(this);
+        serialStatusTextView.setText(R.string.serialListening);
     }
 
     @Override
@@ -61,42 +70,46 @@ public class MainActivity extends AppCompatActivity implements ArduinoListener {
     @Override
     public void onArduinoAttached(UsbDevice device) {
         Log.i(TAG, "Arduino attached!");
-        Snackbar.make(coordinatorLayout, "Arduino attached!", Snackbar.LENGTH_LONG).show();
+        serialStatusTextView.setText(R.string.serialAttached);
         serialPort.open(device);
     }
 
     @Override
     public void onArduinoDetached() {
         Log.i(TAG, "Arduino detached");
-        Snackbar.make(coordinatorLayout, "Arduino detached!", Snackbar.LENGTH_LONG).show();
+        serialStatusTextView.setText(R.string.serialDetached);
     }
 
     @Override
     public void onArduinoMessage(byte[] bytes) {
         // new message received from serialPort
         String message = new String(bytes);
-        Log.i(TAG, "> " + message);
-        Snackbar.make(coordinatorLayout, "Received new message: " + message, Snackbar.LENGTH_LONG).show();
         display(message);
     }
 
     @Override
     public void onArduinoOpened() {
         // you can start the communication
+        serialStatusTextView.setText(R.string.serialOpen);
         String str = "Hello World!";
-        Snackbar.make(coordinatorLayout, "Connection is open --> sending data", Snackbar.LENGTH_LONG).show();
         serialPort.send(str.getBytes());
     }
 
     @Override
     public void onUsbPermissionDenied() {
         // Permission denied, display popup then
+        serialStatusTextView.setText(R.string.SerialPermission);
         Log.i(TAG, "Permission denied... New attempt in 3 sec");
-        Snackbar.make(coordinatorLayout, "Permission denied... New attempt in 3 sec", Snackbar.LENGTH_LONG).show();
         new Handler().postDelayed(() -> serialPort.reopen(), 3000);
     }
 
-    public void display(final String message){
-        runOnUiThread(() -> textView.setText(message));
+    public void display(final String message) {
+        try {
+            Log.i(TAG, "Received message: " + message);
+            runOnUiThread(() -> receivedMessageTextView.setText(message));
+        } catch (Exception e) {
+            Log.i(TAG, "Failed to receive message");
+            e.printStackTrace();
+        }
     }
 }
