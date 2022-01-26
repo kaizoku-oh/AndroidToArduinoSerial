@@ -7,7 +7,9 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.Switch;
 import android.widget.TextView;
 
 import com.google.android.material.snackbar.Snackbar;
@@ -32,6 +34,7 @@ public class MainActivity extends AppCompatActivity implements ArduinoListener {
         receivedMessageTextView = findViewById(R.id.receivedMessage);
         messageToSendEditText = findViewById(R.id.messageToSend);
         Button sendButton = findViewById(R.id.sendButton);
+        Switch switchButton = findViewById(R.id.switchButton);
 
         sendButton.setOnClickListener(v -> {
             String msg = messageToSendEditText.getText().toString();
@@ -43,11 +46,21 @@ public class MainActivity extends AppCompatActivity implements ArduinoListener {
             }
         });
 
+        switchButton.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                serialPort.send("1".getBytes());
+            } else {
+                serialPort.send("0".getBytes());
+            }
+            messageToSendEditText.setText("");
+        });
+
         serialPort = new Arduino(this);
-        serialPort.setBaudRate(9600);
-        /* FTDI: New USB device found, idVendor=1a86, idProduct=7523, bcdDevice= 2.54 */
-        /* ESP32: New USB device found, idVendor=10c4, idProduct=ea60, bcdDevice= 1.00 */
-        serialPort.addVendorId(0x10c4);
+        serialPort.setBaudRate(19200);
+        /* OPEN SMART FTDI: New USB device found, idVendor=1a86, idProduct=7523, bcdDevice= 2.54 */
+        /* ESP32-WROOM-32: New USB device found, idVendor=10c4, idProduct=ea60, bcdDevice= 1.00 */
+        /* Arduino Nano: New USB device found, idVendor=0403, idProduct=0000, bcdDevice= 6.00 */
+        serialPort.addVendorId(0x1a86);
         Log.i(TAG, "Please plug an Arduino via OTG.");
         Log.i(TAG, "On some devices you will have to enable OTG Storage in the phone's settings");
     }
