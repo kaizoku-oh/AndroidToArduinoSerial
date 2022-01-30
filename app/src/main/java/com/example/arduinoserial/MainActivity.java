@@ -15,7 +15,6 @@ import me.aflak.arduino.Arduino;
 import me.aflak.arduino.ArduinoListener;
 
 public class MainActivity extends AppCompatActivity implements ArduinoListener {
-
     /*
      * Vendor IDs:
      *   OPEN SMART FTDI: 0x1A86
@@ -40,7 +39,7 @@ public class MainActivity extends AppCompatActivity implements ArduinoListener {
         serialPort = new Arduino(this);
         serialPort.setBaudRate(BAUDRATE);
         serialPort.addVendorId(VENDOR_ID);
-        Log.i(TAG, "Please plug an Arduino via OTG.");
+        Log.i(TAG, "Please plug the usb-to-serial converter via OTG.");
         Log.i(TAG, "On some devices you will have to enable OTG Storage in the phone's settings");
 
         chatView.setOnSentMessageListener(chatMessage -> {
