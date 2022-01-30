@@ -1,76 +1,76 @@
 package com.example.arduinoserial;
 
+import static co.intentservice.chatui.models.ChatMessage.Type.RECEIVED;
+
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.hardware.usb.UsbDevice;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
-import android.widget.Button;
-import android.widget.CompoundButton;
-import android.widget.EditText;
-import android.widget.Switch;
-import android.widget.TextView;
 
-import com.google.android.material.snackbar.Snackbar;
-
+import co.intentservice.chatui.ChatView;
+import co.intentservice.chatui.models.ChatMessage;
 import me.aflak.arduino.Arduino;
 import me.aflak.arduino.ArduinoListener;
 
 public class MainActivity extends AppCompatActivity implements ArduinoListener {
-
+    /*
+     * Vendor IDs:
+     *   OPEN SMART FTDI: 0x1A86
+     *   ESP32-WROOM-32:  0x10C4
+     *   Arduino Nano:    0x0403
+     */
+    private static final int VENDOR_ID = 0x1A86;
+    private static final int BAUDRATE = 19600;
+    private static final int SERIAL_REOPEN_TIMEOUT_MS = 3000;
     private static final String TAG = "MainActivityTAG";
-    private TextView serialStatusTextView;
-    private TextView receivedMessageTextView;
-    private EditText messageToSendEditText;
+
     private Arduino serialPort;
+    private ChatView chatView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        serialStatusTextView = findViewById(R.id.serialStatus);
-        receivedMessageTextView = findViewById(R.id.receivedMessage);
-        messageToSendEditText = findViewById(R.id.messageToSend);
-        Button sendButton = findViewById(R.id.sendButton);
-        Switch switchButton = findViewById(R.id.switchButton);
-
-        sendButton.setOnClickListener(v -> {
-            String msg = messageToSendEditText.getText().toString();
-            if (msg.length() > 0) {
-                serialPort.send(msg.getBytes());
-                messageToSendEditText.setText("");
-            } else {
-                Snackbar.make(v, "Cannot send empty message", Snackbar.LENGTH_LONG).show();
-            }
-        });
-
-        switchButton.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            if (isChecked) {
-                serialPort.send("1".getBytes());
-            } else {
-                serialPort.send("0".getBytes());
-            }
-            messageToSendEditText.setText("");
-        });
+        chatView = findViewById(R.id.chat_view);
 
         serialPort = new Arduino(this);
-        serialPort.setBaudRate(19200);
-        /* OPEN SMART FTDI: New USB device found, idVendor=1a86, idProduct=7523, bcdDevice= 2.54 */
-        /* ESP32-WROOM-32: New USB device found, idVendor=10c4, idProduct=ea60, bcdDevice= 1.00 */
-        /* Arduino Nano: New USB device found, idVendor=0403, idProduct=0000, bcdDevice= 6.00 */
-        serialPort.addVendorId(0x1a86);
-        Log.i(TAG, "Please plug an Arduino via OTG.");
+        serialPort.setBaudRate(BAUDRATE);
+        serialPort.addVendorId(VENDOR_ID);
+        Log.i(TAG, "Please plug the usb-to-serial converter via OTG.");
         Log.i(TAG, "On some devices you will have to enable OTG Storage in the phone's settings");
-    }
 
+        chatView.setOnSentMessageListener(chatMessage -> {
+            // perform actual message sending
+            Log.i(TAG, "onCreate: Sending message...");
+            serialPort.send(chatMessage.getMessage().getBytes());
+            long tsLong = System.currentTimeMillis();
+            chatView.addMessage(new ChatMessage(chatMessage.getMessage(), tsLong, RECEIVED));
+            return true;
+        });
+
+        chatView.setTypingListener(new ChatView.TypingListener() {
+            @Override
+            public void userStartedTyping() {
+                // will be called when the user starts typing
+                Log.i(TAG, "userStartedTyping: Typing...");
+            }
+
+            @Override
+            public void userStoppedTyping() {
+                // will be called when the user stops typing
+                Log.i(TAG, "userStoppedTyping: Stopped typing");
+            }
+        });
+    }
 
     @Override
     protected void onStart() {
         super.onStart();
         serialPort.setArduinoListener(this);
-        serialStatusTextView.setText(R.string.serialListening);
+        Log.i(TAG, "Listening");
     }
 
     @Override
@@ -78,51 +78,41 @@ public class MainActivity extends AppCompatActivity implements ArduinoListener {
         super.onDestroy();
         serialPort.unsetArduinoListener();
         serialPort.close();
+        Log.i(TAG, "Serial closed");
     }
 
     @Override
     public void onArduinoAttached(UsbDevice device) {
-        Log.i(TAG, "Arduino attached!");
-        serialStatusTextView.setText(R.string.serialAttached);
+        Log.i(TAG, "Serial attached!");
         serialPort.open(device);
     }
 
     @Override
     public void onArduinoDetached() {
-        Log.i(TAG, "Arduino detached");
-        serialStatusTextView.setText(R.string.serialDetached);
+        Log.i(TAG, "Serial detached");
     }
 
     @Override
     public void onArduinoMessage(byte[] bytes) {
         // new message received from serialPort
-        String message = new String(bytes);
-        display(message);
+        String message;
+        long tsLong;
+
+        message = new String(bytes);
+        tsLong = System.currentTimeMillis();
+        chatView.addMessage(new ChatMessage(message, tsLong, RECEIVED));
     }
 
     @Override
     public void onArduinoOpened() {
         // you can start the communication
-        serialStatusTextView.setText(R.string.serialOpen);
-        String str = "Hello World!";
-        serialPort.send(str.getBytes());
+        Log.i(TAG, "Serial opened");
     }
 
     @Override
     public void onUsbPermissionDenied() {
         // Permission denied, display popup then
-        serialStatusTextView.setText(R.string.SerialPermission);
         Log.i(TAG, "Permission denied... New attempt in 3 sec");
-        new Handler().postDelayed(() -> serialPort.reopen(), 3000);
-    }
-
-    public void display(final String message) {
-        try {
-            Log.i(TAG, "Received message: " + message);
-            runOnUiThread(() -> receivedMessageTextView.setText(message));
-        } catch (Exception e) {
-            Log.i(TAG, "Failed to receive message");
-            e.printStackTrace();
-        }
+        new Handler().postDelayed(() -> serialPort.reopen(), SERIAL_REOPEN_TIMEOUT_MS);
     }
 }
