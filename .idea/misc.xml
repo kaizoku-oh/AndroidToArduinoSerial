@@ -3,6 +3,7 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="..\:/AndroidStudioProjects/AndroidToArduinoSerial/app/src/main/res/layout/activity_main.xml" value="0.17300724637681159" />
         <entry key="..\:/AndroidStudioProjects/ArduinoSerial/app/src/main/res/layout/activity_main.xml" value="0.1793478260869565" />
         <entry key="app/src/main/res/layout/activity_main.xml" value="0.33" />
       </map>

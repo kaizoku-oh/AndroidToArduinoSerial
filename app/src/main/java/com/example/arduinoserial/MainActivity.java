@@ -1,28 +1,23 @@
 package com.example.arduinoserial;
 
+import static co.intentservice.chatui.models.ChatMessage.Type.RECEIVED;
+
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.hardware.usb.UsbDevice;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
-import android.widget.Button;
-import android.widget.CompoundButton;
-import android.widget.EditText;
-import android.widget.Switch;
-import android.widget.TextView;
 
-import com.google.android.material.snackbar.Snackbar;
-
+import co.intentservice.chatui.ChatView;
+import co.intentservice.chatui.models.ChatMessage;
 import me.aflak.arduino.Arduino;
 import me.aflak.arduino.ArduinoListener;
 
 public class MainActivity extends AppCompatActivity implements ArduinoListener {
 
     private static final String TAG = "MainActivityTAG";
-    private TextView serialStatusTextView;
-    private TextView receivedMessageTextView;
-    private EditText messageToSendEditText;
+    ChatView chatView;
     private Arduino serialPort;
 
     @Override
@@ -30,29 +25,29 @@ public class MainActivity extends AppCompatActivity implements ArduinoListener {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        serialStatusTextView = findViewById(R.id.serialStatus);
-        receivedMessageTextView = findViewById(R.id.receivedMessage);
-        messageToSendEditText = findViewById(R.id.messageToSend);
-        Button sendButton = findViewById(R.id.sendButton);
-        Switch switchButton = findViewById(R.id.switchButton);
+        chatView = findViewById(R.id.chat_view);
 
-        sendButton.setOnClickListener(v -> {
-            String msg = messageToSendEditText.getText().toString();
-            if (msg.length() > 0) {
-                serialPort.send(msg.getBytes());
-                messageToSendEditText.setText("");
-            } else {
-                Snackbar.make(v, "Cannot send empty message", Snackbar.LENGTH_LONG).show();
-            }
+        chatView.setOnSentMessageListener(chatMessage -> {
+            // perform actual message sending
+            Log.i(TAG, "onCreate: Sending message...");
+            serialPort.send(chatMessage.getMessage().getBytes());
+            long tsLong = System.currentTimeMillis();
+            chatView.addMessage(new ChatMessage(chatMessage.getMessage(), tsLong, RECEIVED));
+            return true;
         });
 
-        switchButton.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            if (isChecked) {
-                serialPort.send("1".getBytes());
-            } else {
-                serialPort.send("0".getBytes());
+        chatView.setTypingListener(new ChatView.TypingListener() {
+            @Override
+            public void userStartedTyping() {
+                // will be called when the user starts typing
+                Log.i(TAG, "userStartedTyping: Typing...");
             }
-            messageToSendEditText.setText("");
+
+            @Override
+            public void userStoppedTyping() {
+                // will be called when the user stops typing
+                Log.i(TAG, "userStoppedTyping: Stopped typing");
+            }
         });
 
         serialPort = new Arduino(this);
@@ -70,7 +65,7 @@ public class MainActivity extends AppCompatActivity implements ArduinoListener {
     protected void onStart() {
         super.onStart();
         serialPort.setArduinoListener(this);
-        serialStatusTextView.setText(R.string.serialListening);
+        Log.i(TAG, "Listening");
     }
 
     @Override
@@ -82,15 +77,13 @@ public class MainActivity extends AppCompatActivity implements ArduinoListener {
 
     @Override
     public void onArduinoAttached(UsbDevice device) {
-        Log.i(TAG, "Arduino attached!");
-        serialStatusTextView.setText(R.string.serialAttached);
+        Log.i(TAG, "Serial attached!");
         serialPort.open(device);
     }
 
     @Override
     public void onArduinoDetached() {
-        Log.i(TAG, "Arduino detached");
-        serialStatusTextView.setText(R.string.serialDetached);
+        Log.i(TAG, "Serial detached");
     }
 
     @Override
@@ -103,15 +96,12 @@ public class MainActivity extends AppCompatActivity implements ArduinoListener {
     @Override
     public void onArduinoOpened() {
         // you can start the communication
-        serialStatusTextView.setText(R.string.serialOpen);
-        String str = "Hello World!";
-        serialPort.send(str.getBytes());
+        Log.i(TAG, "Serial opened");
     }
 
     @Override
     public void onUsbPermissionDenied() {
         // Permission denied, display popup then
-        serialStatusTextView.setText(R.string.SerialPermission);
         Log.i(TAG, "Permission denied... New attempt in 3 sec");
         new Handler().postDelayed(() -> serialPort.reopen(), 3000);
     }
@@ -119,7 +109,8 @@ public class MainActivity extends AppCompatActivity implements ArduinoListener {
     public void display(final String message) {
         try {
             Log.i(TAG, "Received message: " + message);
-            runOnUiThread(() -> receivedMessageTextView.setText(message));
+            long tsLong = System.currentTimeMillis()/ 1000;
+            chatView.addMessage(new ChatMessage(message, tsLong, RECEIVED));
         } catch (Exception e) {
             Log.i(TAG, "Failed to receive message");
             e.printStackTrace();
