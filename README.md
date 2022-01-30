@@ -3,7 +3,7 @@
 ## TODOs ✅
 
 - [ ] Disable UI when serial connection is not open
-- [ ] Bye or find a second OTG cable
+- [ ] Buy or find a second OTG cable
 - [ ] Test app on 2 phones with RF modules
 - [ ] Change app/project/repo name
 - [ ] Add trasport protocol layer on top of RF for message acknowlegment
