@@ -17,8 +17,18 @@ import me.aflak.arduino.ArduinoListener;
 public class MainActivity extends AppCompatActivity implements ArduinoListener {
 
     private static final String TAG = "MainActivityTAG";
-    ChatView chatView;
+    /*
+     * Vendor IDs:
+     *   OPEN SMART FTDI: 0x1A86
+     *   ESP32-WROOM-32:  0x10C4
+     *   Arduino Nano:    0x0403
+     */
+    private static final int VENDOR_ID = 0x1A86;
+    private static final int BAUDRATE = 19600;
+    private static final int SERIAL_REOPEN_TIMEOUT_MS = 3000;
+
     private Arduino serialPort;
+    private ChatView chatView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,6 +36,12 @@ public class MainActivity extends AppCompatActivity implements ArduinoListener {
         setContentView(R.layout.activity_main);
 
         chatView = findViewById(R.id.chat_view);
+
+        serialPort = new Arduino(this);
+        serialPort.setBaudRate(BAUDRATE);
+        serialPort.addVendorId(VENDOR_ID);
+        Log.i(TAG, "Please plug an Arduino via OTG.");
+        Log.i(TAG, "On some devices you will have to enable OTG Storage in the phone's settings");
 
         chatView.setOnSentMessageListener(chatMessage -> {
             // perform actual message sending
@@ -49,17 +65,7 @@ public class MainActivity extends AppCompatActivity implements ArduinoListener {
                 Log.i(TAG, "userStoppedTyping: Stopped typing");
             }
         });
-
-        serialPort = new Arduino(this);
-        serialPort.setBaudRate(19200);
-        /* OPEN SMART FTDI: New USB device found, idVendor=1a86, idProduct=7523, bcdDevice= 2.54 */
-        /* ESP32-WROOM-32: New USB device found, idVendor=10c4, idProduct=ea60, bcdDevice= 1.00 */
-        /* Arduino Nano: New USB device found, idVendor=0403, idProduct=0000, bcdDevice= 6.00 */
-        serialPort.addVendorId(0x1a86);
-        Log.i(TAG, "Please plug an Arduino via OTG.");
-        Log.i(TAG, "On some devices you will have to enable OTG Storage in the phone's settings");
     }
-
 
     @Override
     protected void onStart() {
@@ -73,6 +79,7 @@ public class MainActivity extends AppCompatActivity implements ArduinoListener {
         super.onDestroy();
         serialPort.unsetArduinoListener();
         serialPort.close();
+        Log.i(TAG, "Serial closed");
     }
 
     @Override
@@ -89,8 +96,12 @@ public class MainActivity extends AppCompatActivity implements ArduinoListener {
     @Override
     public void onArduinoMessage(byte[] bytes) {
         // new message received from serialPort
-        String message = new String(bytes);
-        display(message);
+        String message;
+        long tsLong;
+
+        message = new String(bytes);
+        tsLong = System.currentTimeMillis();
+        chatView.addMessage(new ChatMessage(message, tsLong, RECEIVED));
     }
 
     @Override
@@ -103,17 +114,6 @@ public class MainActivity extends AppCompatActivity implements ArduinoListener {
     public void onUsbPermissionDenied() {
         // Permission denied, display popup then
         Log.i(TAG, "Permission denied... New attempt in 3 sec");
-        new Handler().postDelayed(() -> serialPort.reopen(), 3000);
-    }
-
-    public void display(final String message) {
-        try {
-            Log.i(TAG, "Received message: " + message);
-            long tsLong = System.currentTimeMillis()/ 1000;
-            chatView.addMessage(new ChatMessage(message, tsLong, RECEIVED));
-        } catch (Exception e) {
-            Log.i(TAG, "Failed to receive message");
-            e.printStackTrace();
-        }
+        new Handler().postDelayed(() -> serialPort.reopen(), SERIAL_REOPEN_TIMEOUT_MS);
     }
 }

@@ -1,10 +1,3 @@
 <resources>
     <string name="app_name">ArduinoSerial</string>
-    <string name="hint">Type your message here</string>
-    <string name="sendButton">SEND</string>
-    <string name="serialListening">Listening</string>
-    <string name="serialAttached">Attached</string>
-    <string name="serialDetached">Detached</string>
-    <string name="serialOpen">Open</string>
-    <string name="SerialPermission">Permission denied</string>
 </resources>

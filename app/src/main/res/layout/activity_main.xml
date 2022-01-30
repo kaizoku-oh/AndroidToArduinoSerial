@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:chatview="http://schemas.android.com/apk/res-auto"
@@ -15,10 +16,11 @@
         android:id="@+id/chat_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        chatview:backgroundColor="@color/off_white"
+        chatview:backgroundColor="@color/white"
         chatview:bubbleElevation="elevated"
         chatview:bubbleBackgroundRcv="#EE0290"
-        chatview:bubbleBackgroundSend="#6200EE"
+        chatview:bubbleBackgroundSend="@color/white"
+        chatview:sendBtnBackgroundTint="@color/purple_500"
         chatview:inputHint="Start typing"/>
 
 </LinearLayout>
