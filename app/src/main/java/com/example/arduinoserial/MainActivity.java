@@ -16,7 +16,6 @@ import me.aflak.arduino.ArduinoListener;
 
 public class MainActivity extends AppCompatActivity implements ArduinoListener {
 
-    private static final String TAG = "MainActivityTAG";
     /*
      * Vendor IDs:
      *   OPEN SMART FTDI: 0x1A86
@@ -26,6 +25,7 @@ public class MainActivity extends AppCompatActivity implements ArduinoListener {
     private static final int VENDOR_ID = 0x1A86;
     private static final int BAUDRATE = 19600;
     private static final int SERIAL_REOPEN_TIMEOUT_MS = 3000;
+    private static final String TAG = "MainActivityTAG";
 
     private Arduino serialPort;
     private ChatView chatView;
