@@ -12,3 +12,5 @@
 - [ ] Replace it with asymetric encryption
 - [ ] Add messages local storage
 - [ ] Add user management
+
+![UI screenshot](ui-screenshot.jpg)
