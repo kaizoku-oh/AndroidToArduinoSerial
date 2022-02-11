@@ -1,4 +1,4 @@
-package com.example.arduinoserial;
+package com.example.morf;
 
 import static co.intentservice.chatui.models.ChatMessage.Type.RECEIVED;
 

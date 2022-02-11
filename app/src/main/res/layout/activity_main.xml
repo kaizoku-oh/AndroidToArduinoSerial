@@ -10,7 +10,7 @@
     android:layout_height="match_parent"
     android:gravity="center_horizontal"
     android:orientation="vertical"
-    tools:context="com.example.arduinoserial.MainActivity">
+    tools:context="com.example.morf.MainActivity">
 
     <co.intentservice.chatui.ChatView
         android:id="@+id/chat_view"

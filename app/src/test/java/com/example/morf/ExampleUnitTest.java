@@ -1,4 +1,4 @@
-package com.example.arduinoserial;
+package com.example.morf;
 
 import org.junit.Test;
 
