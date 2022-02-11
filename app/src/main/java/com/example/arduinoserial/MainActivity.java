@@ -22,7 +22,7 @@ public class MainActivity extends AppCompatActivity implements ArduinoListener {
      *   Arduino Nano:    0x0403
      */
     private static final int VENDOR_ID = 0x1A86;
-    private static final int BAUDRATE = 19600;
+    private static final int BAUDRATE = 19200;
     private static final int SERIAL_REOPEN_TIMEOUT_MS = 3000;
     private static final String TAG = "MainActivityTAG";
 
@@ -46,8 +46,6 @@ public class MainActivity extends AppCompatActivity implements ArduinoListener {
             // perform actual message sending
             Log.i(TAG, "onCreate: Sending message...");
             serialPort.send(chatMessage.getMessage().getBytes());
-            long tsLong = System.currentTimeMillis();
-            chatView.addMessage(new ChatMessage(chatMessage.getMessage(), tsLong, RECEIVED));
             return true;
         });
 
@@ -100,7 +98,7 @@ public class MainActivity extends AppCompatActivity implements ArduinoListener {
 
         message = new String(bytes);
         tsLong = System.currentTimeMillis();
-        chatView.addMessage(new ChatMessage(message, tsLong, RECEIVED));
+        runOnUiThread(() -> chatView.addMessage(new ChatMessage(message, tsLong, RECEIVED)));
     }
 
     @Override
