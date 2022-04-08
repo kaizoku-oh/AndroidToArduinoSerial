@@ -1,4 +1,5 @@
 # MORF: Messaging Over RF
+The goal behind this project is to build a chat application that doesn't use the traditional communication channels integrated into the mobile device and rather use an external radio module and bypass the mobile network interfaces.
 
 This android application communicates with an RF module through an OTG cable that is connected to a UART-To-USB converter
 
